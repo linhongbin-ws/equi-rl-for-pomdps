@@ -21,3 +21,4 @@ scripts/tmp_configs/
 third_party/
 
 wandb/
+**.egg-info/
