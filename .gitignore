@@ -22,3 +22,7 @@ third_party/
 
 wandb/
 **.egg-info/
+
+escnn/escnn.egg-info/
+
+pomdp-domains/pomdp_domains.egg-info/
