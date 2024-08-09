@@ -9,7 +9,6 @@ from helping_hands_rl_envs import env_factory
 import matplotlib.pyplot as plt
 import time
 import math
-import torch
 
 class BlockEnv(gym.Env):
     def __init__(self, seed=0, img_size=84, rendering=False, robot='kuka', action_sequence='pxyzr', noise=False):
