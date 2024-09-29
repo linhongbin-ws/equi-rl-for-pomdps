@@ -23,14 +23,30 @@ class Sensor(object):
     self.proj_matrix = pb.computeProjectionMatrixFOV(70, 1, 0.001, 0.3)
 
   def getHeightmap(self, size):
+    # image_arr = pb.getCameraImage(width=size, height=size,
+    #                               viewMatrix=self.view_matrix,
+    #                               projectionMatrix=self.proj_matrix,
+    #                               renderer=pb.ER_TINY_RENDERER)
     image_arr = pb.getCameraImage(width=size, height=size,
                                   viewMatrix=self.view_matrix,
                                   projectionMatrix=self.proj_matrix,
-                                  renderer=pb.ER_TINY_RENDERER)
+                                  renderer=pb.ER_BULLET_HARDWARE_OPENGL,
+                                  flags=pb.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX)
     depth_img = np.array(image_arr[3])
     depth = self.far * self.near / (self.far - (self.far - self.near) * depth_img)
-
-    return np.abs(depth - np.max(depth)).reshape(size, size)
+    mask = image_arr[4].reshape(size, size)
+    mask_background_id=-5
+    in_obj_data = np.bitwise_and(mask, ((1 << 24) - 1))
+    in_link_data = (np.right_shift(mask, 24)) - 1
+    in_obj_data[mask < 0] = mask_background_id
+    in_link_data[mask < 0] = mask_background_id
+    mask_metadata = (in_obj_data, in_link_data)
+    # get_mask = lambda in_obj_data, in_link_data,  _obj_id, _obj_link_id: (in_obj_data == _obj_id) & (self._mask_or(in_link_data, _obj_link_id))
+    # mask1 = get_mask(in_obj_data, in_link_data, 1, [-1])
+    # import matplotlib.pyplot as plt
+    # plt.imshow(depth_img)
+    # plt.show()
+    return np.abs(depth - np.max(depth)).reshape(size, size), mask_metadata
 
   def getPointCloud(self, size, to_numpy=True):
     image_arr = pb.getCameraImage(width=size, height=size,

@@ -9,6 +9,7 @@ from helping_hands_rl_envs import env_factory
 import matplotlib.pyplot as plt
 import time
 import math
+import copy
 
 class BlockEnv(gym.Env):
     def __init__(self, seed=0, img_size=84, rendering=False, robot='kuka', action_sequence='pxyzr', noise=False):
@@ -185,11 +186,17 @@ class BlockEnv(gym.Env):
         if self.env_config['robot'] == 'kuka':
             action[0] = 0.5 * (action[0] + 1)  # [-1, 1] to [0, 1] for p
         (state, _, obs), reward, done = self.core_env.step(action)
-
-        self.obs = self._process_obs(state, obs)
+        # import matplotlib.pyplot as plt
+        # plt.imshow(obs['mask']['gripper'])
+        # plt.show()
+        # plt.imshow(obs['depth'][0,:,:])
+        # plt.show()
+        print("stepping.......................")
+        
+        self.obs['depth'] = self._process_obs(state, obs['depth'])
 
         info = {}
-
+        info['mask'] = obs['mask']
         info["success"] = done and (reward > 0)
 
         self.step_cnt += 1
@@ -197,7 +204,7 @@ class BlockEnv(gym.Env):
         if self.show:
             self.render()
 
-        return self.obs, reward, done, info
+        return self.obs['depth'], reward, done, info
 
     def render(self, mode='human'):
         pass
@@ -206,9 +213,10 @@ class BlockEnv(gym.Env):
         self.target_obj_idx = 1 - self.target_obj_idx
         self.step_cnt = 0
         (state, _, obs) = self.core_env.reset(self.target_obj_idx, noise=self.include_noise)
-        self.obs = self._process_obs(state, obs)
+        self.obs = copy.deepcopy(obs)
+        self.obs['depth'] = self._process_obs(state, obs['depth'])
 
-        return self.obs
+        return self.obs['depth']
 
     def close(self):
         self.core_env.close()
