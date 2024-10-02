@@ -214,7 +214,7 @@ class CloseLoopEnv(BaseEnv):
   def _getObservation(self, action=None):
     ''''''
     if self.obs_type == 'pixel':
-      self.heightmap, mask_metadata = self._getHeightmap()
+      self.heightmap, mask_metadata, rgb = self._getHeightmap()
       gripper_img = self.getGripperImg()
       heightmap = self.heightmap
       if self.view_type.find('height') > -1:
@@ -227,6 +227,8 @@ class CloseLoopEnv(BaseEnv):
       obs = {}
       obs['depth'] = heightmap
       obs['mask'] = mask_metadata
+      obs['mask']["gripper"] = np.transpose(gripper_img == 1)
+      obs['rgb']= np.transpose(rgb, axes=(1,0,2))
       return self._isHolding(), None, obs
     else:
       obs = self._getVecObservation()
@@ -360,7 +362,7 @@ class CloseLoopEnv(BaseEnv):
       cam_up_vector = [-1, 0, 0]
       self.sensor.setCamMatrix(gripper_pos, cam_up_vector, target_pos)
 
-      heightmap, mask_metadata = self.sensor.getHeightmap(self.heightmap_size)
+      heightmap, mask_metadata, rgb = self.sensor.getHeightmap(self.heightmap_size)
       get_mask = lambda in_obj_data, in_link_data,  _obj_id, _obj_link_id: (in_obj_data == _obj_id) & (self._mask_or(in_link_data, _obj_link_id))
       masks = {}
       # masks['gripper'] =  np.transpose(get_mask(mask_metadata[0], mask_metadata[1], 1, [-1]))
@@ -383,7 +385,7 @@ class CloseLoopEnv(BaseEnv):
         depth = -heightmap + gripper_pos[2]
       else:
         depth = heightmap
-      return depth, masks
+      return depth, masks, rgb
     elif self.view_type in ['pers_center_xyz']:
       # xyz centered, gripper will be visible
       gripper_pos[2] += gripper_z_offset

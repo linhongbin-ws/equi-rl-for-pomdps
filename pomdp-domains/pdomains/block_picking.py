@@ -192,11 +192,10 @@ class BlockEnv(gym.Env):
         # plt.imshow(obs['depth'][0,:,:])
         # plt.show()
         print("stepping.......................")
-        
-        self.obs['depth'] = self._process_obs(state, obs['depth'])
+        self.obs = obs.copy()
+        self.obs['image'] = self._process_obs(state, obs['depth'])
 
         info = {}
-        info['mask'] = obs['mask']
         info["success"] = done and (reward > 0)
 
         self.step_cnt += 1
@@ -204,7 +203,7 @@ class BlockEnv(gym.Env):
         if self.show:
             self.render()
 
-        return self.obs['depth'], reward, done, info
+        return self.obs, reward, done, info
 
     def render(self, mode='human'):
         pass
@@ -213,10 +212,9 @@ class BlockEnv(gym.Env):
         self.target_obj_idx = 1 - self.target_obj_idx
         self.step_cnt = 0
         (state, _, obs) = self.core_env.reset(self.target_obj_idx, noise=self.include_noise)
-        self.obs = copy.deepcopy(obs)
-        self.obs['depth'] = self._process_obs(state, obs['depth'])
-
-        return self.obs['depth']
+        self.obs = obs.copy()
+        self.obs['image'] = self._process_obs(state, obs['depth'])
+        return self.obs
 
     def close(self):
         self.core_env.close()
