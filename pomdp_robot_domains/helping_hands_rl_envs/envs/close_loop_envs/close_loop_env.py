@@ -372,8 +372,8 @@ class CloseLoopEnv(BaseEnv):
     
 
       # import matplotlib.pyplot as plt
-      print("object id", np.unique(mask_metadata[0]))
-      print("link id", np.unique(mask_metadata[1]))
+      # print("object id", np.unique(mask_metadata[0]))
+      # print("link id", np.unique(mask_metadata[1]))
       # plt.imshow(masks['robot'])
       # plt.show()
       # plt.imshow(masks['object1'])

@@ -191,7 +191,7 @@ class BlockEnv(gym.Env):
         # plt.show()
         # plt.imshow(obs['depth'][0,:,:])
         # plt.show()
-        print("stepping.......................")
+        # print("stepping.......................")
         self.obs = obs.copy()
         self.obs['image'] = self._process_obs(state, obs['depth'])
 
