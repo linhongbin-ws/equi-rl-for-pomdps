@@ -19,7 +19,7 @@ class CloseLoopBlockPickingEnv(CloseLoopEnv):
 
   def _getValidOrientation(self, random_orientation):
     if random_orientation:
-      orientation = pb.getQuaternionFromEuler([0., 0., np.pi/2 * (np.random.random_sample() - 0.5)])
+      orientation = pb.getQuaternionFromEuler([0., 0., np.pi/2 * (self.pose_rng.random_sample() - 0.5)])
     else:
       orientation = pb.getQuaternionFromEuler([0., 0., 0.])
     return orientation

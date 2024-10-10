@@ -6,7 +6,6 @@ import os
 import pickle
 import copy
 import numpy as np
-import numpy.random as npr
 from scipy.ndimage import median_filter
 import skimage.transform as sk_transform
 
@@ -26,6 +25,8 @@ from helping_hands_rl_envs.pybullet.objects.pybullet_object import PybulletObjec
 import helping_hands_rl_envs.pybullet.utils.object_generation as pb_obj_generation
 from helping_hands_rl_envs.pybullet.utils.constants import NoValidPositionException
 
+
+
 class BaseEnv:
   '''
   Base Env Class.
@@ -38,7 +39,7 @@ class BaseEnv:
     config = {**env_configs.DEFAULT_CONFIG, **config}
 
     self.seed = config['seed']
-    npr.seed(self.seed)
+    self.pose_rng = np.random.RandomState(config['seed'])
 
     # Setup environment
     self.workspace = config['workspace']
@@ -398,11 +399,11 @@ class BaseEnv:
           sample_range[0][1] = min(sample_range[0][1], self.getValidSpace()[0][1]-border_padding/2)
           sample_range[1][0] = max(sample_range[1][0], self.getValidSpace()[1][0]+border_padding/2)
           sample_range[1][1] = min(sample_range[1][1], self.getValidSpace()[1][1]-border_padding/2)
-          position = [(sample_range[0][1] - sample_range[0][0]) * npr.random_sample() + sample_range[0][0],
-                      (sample_range[1][1] - sample_range[1][0]) * npr.random_sample() + sample_range[1][0]]
+          position = [(sample_range[0][1] - sample_range[0][0]) *  self.pose_rng.random_sample() + sample_range[0][0],
+                      (sample_range[1][1] - sample_range[1][0]) *  self.pose_rng.random_sample() + sample_range[1][0]]
         else:
-          position = [(x_extents - border_padding) * npr.random_sample() + self.getValidSpace()[0][0] + border_padding / 2,
-                      (y_extents - border_padding) * npr.random_sample() + self.getValidSpace()[1][0] +  border_padding / 2]
+          position = [(x_extents - border_padding) *  self.pose_rng.random_sample() + self.getValidSpace()[0][0] + border_padding / 2,
+                      (y_extents - border_padding) *  self.pose_rng.random_sample() + self.getValidSpace()[1][0] +  border_padding / 2]
 
         if self.pos_candidate is not None:
           position[0] = self.pos_candidate[0][np.abs(self.pos_candidate[0] - position[0]).argmin()]
@@ -429,7 +430,7 @@ class BaseEnv:
 
   def _getValidOrientation(self, random_orientation):
     if random_orientation:
-      orientation = pb.getQuaternionFromEuler([0., 0., 2 * np.pi * np.random.random_sample()])
+      orientation = pb.getQuaternionFromEuler([0., 0., 2 * np.pi * self.pose_rng.random_sample()])
     else:
       orientation = pb.getQuaternionFromEuler([0., 0., 0.])
     return orientation
@@ -508,7 +509,7 @@ class BaseEnv:
 
     for position, orientation in zip(valid_positions, orientations):
       if not scale:
-        scale = npr.choice(np.arange(self.block_scale_range[0], self.block_scale_range[1]+0.01, 0.02))
+        scale =  self.pose_rng.choice(np.arange(self.block_scale_range[0], self.block_scale_range[1]+0.01, 0.02))
 
       if shape_type == constants.CUBE:
         # Make sure all blocks have the same height

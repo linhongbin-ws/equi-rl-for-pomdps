@@ -768,3 +768,6 @@ class SingleRunner(object):
 
   def close(self):
     return
+  
+  def pose_rng(self, seed):
+    self.env.pose_rng =  np.random.RandomState(seed)
