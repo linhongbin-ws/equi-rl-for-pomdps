@@ -173,8 +173,11 @@ class BlockEnv(gym.Env):
         # plt.savefig('after_noise.png', bbox_inches='tight')
         # plt.close()
         # breakpoint()
-        state_tile = state*np.ones((1, obs.shape[1], obs.shape[2]))
-        stacked = np.concatenate([obs, state_tile], axis=0)
+        depths = [v for k,v in obs.items()]
+        depth = np.min(np.stack(depths, axis=0), axis=0)
+        print(depth.shape)
+        state_tile = state*np.ones(depth.shape)
+        stacked = np.stack([depth, state_tile], axis=0)
         return stacked
 
     def step(self, action):

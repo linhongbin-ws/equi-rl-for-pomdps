@@ -216,19 +216,35 @@ class CloseLoopEnv(BaseEnv):
     if self.obs_type == 'pixel':
       self.heightmap, mask_metadata, rgb = self._getHeightmap()
       gripper_img = self.getGripperImg()
-      heightmap = self.heightmap
-      if self.view_type.find('height') > -1:
-        gripper_pos = self.robot._getEndEffectorPosition()
-        heightmap[gripper_img == 1] = gripper_pos[2]
-      else:
-        heightmap[gripper_img == 1] = 0
-      heightmap = heightmap.reshape([1, self.heightmap_size, self.heightmap_size])
-      # gripper_img = gripper_img.reshape([1, self.heightmap_size, self.heightmap_size])
+
       obs = {}
-      obs['depth'] = heightmap
+      obs['rgb']= np.transpose(rgb, axes=(1,0,2))
+      obs['depth'] = {}
       obs['mask'] = mask_metadata
       obs['mask']["gripper"] = np.transpose(gripper_img == 1)
-      obs['rgb']= np.transpose(rgb, axes=(1,0,2))
+      for k,v in obs['mask'].items():
+        obs['depth'][k] = np.ones(v.shape, dtype=float)
+        if k=="gripper":
+          if self.view_type.find('height') > -1:
+            gripper_pos = self.robot._getEndEffectorPosition()
+            obs['depth'][k][v] = gripper_pos
+          else:
+            obs['depth'][k][v] = 0
+        else:
+          obs['depth'][k][v] = self.heightmap[v]
+
+      # heightmap = self.heightmap
+      # if self.view_type.find('height') > -1:
+      #   gripper_pos = self.robot._getEndEffectorPosition()
+      #   heightmap[gripper_img == 1] = gripper_pos[2]
+      # else:
+      #   heightmap[gripper_img == 1] = 0
+      # heightmap = heightmap.reshape([1, self.heightmap_size, self.heightmap_size])
+      # gripper_img = gripper_img.reshape([1, self.heightmap_size, self.heightmap_size])
+
+
+      
+
       return self._isHolding(), None, obs
     else:
       obs = self._getVecObservation()
