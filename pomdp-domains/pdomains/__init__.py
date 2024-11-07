@@ -98,6 +98,7 @@ register(
     max_episode_steps=50,
 )
 
+
 register(
     id='pdomains-block-picking-pixel-v0',
     entry_point='pdomains.block_picking_pix:BlockEnv',

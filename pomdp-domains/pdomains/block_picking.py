@@ -12,7 +12,9 @@ import math
 import copy
 
 class BlockEnv(gym.Env):
-    def __init__(self, seed=0, img_size=84, rendering=False, robot='kuka', action_sequence='pxyzr', noise=False):
+    def __init__(self, seed=0, img_size=84, rendering=False, robot='kuka', action_sequence='pxyzr', noise=False,
+                 obs_dict=False):
+        self._obs_dict = obs_dict
 
         workspace = np.asarray([[0.3, 0.7],
                                 [-0.2, 0.2],
@@ -175,7 +177,6 @@ class BlockEnv(gym.Env):
         # breakpoint()
         depths = [v for k,v in obs.items()]
         depth = np.min(np.stack(depths, axis=0), axis=0)
-        print(depth.shape)
         state_tile = state*np.ones(depth.shape)
         stacked = np.stack([depth, state_tile], axis=0)
         return stacked
@@ -206,7 +207,7 @@ class BlockEnv(gym.Env):
         if self.show:
             self.render()
 
-        return self.obs, reward, done, info
+        return self.obs if self._obs_dict else self.obs['image'], reward, done, info
 
     def render(self, mode='human'):
         pass
@@ -217,7 +218,7 @@ class BlockEnv(gym.Env):
         (state, _, obs) = self.core_env.reset(self.target_obj_idx, noise=self.include_noise)
         self.obs = obs.copy()
         self.obs['image'] = self._process_obs(state, obs['depth'])
-        return self.obs
+        return self.obs if self._obs_dict else self.obs['image']
 
     def close(self):
         self.core_env.close()

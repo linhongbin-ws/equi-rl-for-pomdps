@@ -123,7 +123,7 @@ class Learner:
         if self.env_type in [
             "pomdp",
         ]:  # pomdp/mdp task, using pomdp wrapper
-            import envs.pomdp
+            import pomdp_envs.pomdp
 
             assert num_eval_tasks > 0
             self.train_env = gym.make(env_name, rendering=self.replay)
