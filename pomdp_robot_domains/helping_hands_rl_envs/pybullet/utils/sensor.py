@@ -9,10 +9,13 @@ class Sensor(object):
       cameraTargetPosition=target_pos,
     )
 
-    self.near = near
-    self.far = far
-    self.fov = np.degrees(2 * np.arctan((target_size / 2) / self.far))
-    self.proj_matrix = pb.computeProjectionMatrixFOV(self.fov, 1, self.near, self.far)
+    # self.near = near
+    # self.far = far
+    # self.fov = np.degrees(2 * np.arctan((target_size / 2) / self.far))
+    # self.near = 0.001
+    # self.far = 0.3
+    # self.fov = 70
+    # self.proj_matrix = pb.computeProjectionMatrixFOV(self.fov, 1, self.near, self.far)
 
   def setCamMatrix(self, cam_pos, cam_up_vector, target_pos):
     self.view_matrix = pb.computeViewMatrix(
@@ -20,7 +23,8 @@ class Sensor(object):
       cameraUpVector=cam_up_vector,
       cameraTargetPosition=target_pos,
     )
-    self.proj_matrix = pb.computeProjectionMatrixFOV(70, 1, 0.001, 0.3)
+    # self.proj_matrix = pb.computeProjectionMatrixFOV(70, 1, 0.001, 0.3)
+    self.proj_matrix = pb.computeProjectionMatrixFOV(self.fov, 1, self.near, self.far)
 
   def getHeightmap(self, size):
     # image_arr = pb.getCameraImage(width=size, height=size,
@@ -34,6 +38,7 @@ class Sensor(object):
                                   flags=pb.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX)
     depth_img = np.array(image_arr[3])
     depth = self.far * self.near / (self.far - (self.far - self.near) * depth_img)
+
     mask = image_arr[4].reshape(size, size)
     mask_background_id=-5
     in_obj_data = np.bitwise_and(mask, ((1 << 24) - 1))

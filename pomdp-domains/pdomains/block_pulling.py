@@ -214,3 +214,6 @@ class BlockEnv(gym.Env):
 
     def close(self):
         self.core_env.close()
+
+    def get_projection_matrix(self):
+        return self.core_env.get_projection_matrix()

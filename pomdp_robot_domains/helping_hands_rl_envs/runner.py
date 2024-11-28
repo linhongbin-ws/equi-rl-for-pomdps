@@ -771,3 +771,6 @@ class SingleRunner(object):
   
   def pose_rng(self, seed):
     self.env.pose_rng =  np.random.RandomState(seed)
+  
+  def get_projection_matrix(self):
+    return self.env.sensor.proj_matrix
