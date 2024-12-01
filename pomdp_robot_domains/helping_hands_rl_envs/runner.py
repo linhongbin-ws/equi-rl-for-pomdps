@@ -773,4 +773,4 @@ class SingleRunner(object):
     self.env.pose_rng =  np.random.RandomState(seed)
   
   def get_projection_matrix(self):
-    return self.env.sensor.proj_matrix
+    return np.array(list(self.env.sensor.proj_matrix)).reshape(4,4)

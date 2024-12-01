@@ -225,26 +225,11 @@ class CloseLoopEnv(BaseEnv):
       for k,v in obs['mask'].items():
         obs['depth'][k] = np.ones(v.shape, dtype=float)
         if k=="gripper":
-          if self.view_type.find('height') > -1:
-            gripper_pos = self.robot._getEndEffectorPosition()
-            obs['depth'][k][v] = gripper_pos
-          else:
-            obs['depth'][k][v] = 0
+            obs['depth'][k][v] = self.sensor.cam_z_min
         else:
           obs['depth'][k][v] = self.heightmap[v]
 
-      # heightmap = self.heightmap
-      # if self.view_type.find('height') > -1:
-      #   gripper_pos = self.robot._getEndEffectorPosition()
-      #   heightmap[gripper_img == 1] = gripper_pos[2]
-      # else:
-      #   heightmap[gripper_img == 1] = 0
-      # heightmap = heightmap.reshape([1, self.heightmap_size, self.heightmap_size])
-      # gripper_img = gripper_img.reshape([1, self.heightmap_size, self.heightmap_size])
-
-
-      
-
+    
       return self._isHolding(), None, obs
     else:
       obs = self._getVecObservation()
@@ -374,34 +359,20 @@ class CloseLoopEnv(BaseEnv):
     elif self.view_type in ['camera_center_xyz', 'camera_center_xyz_height']:
       # xyz centered, gripper will be visible
       # print("xxxxxx gripper_z_offset", gripper_z_offset)
-      gripper_pos[2] += 0.045 
-      target_pos = [gripper_pos[0], gripper_pos[1], 0]
+      gripper_pos[2] += 0.04
+      target_pos = [gripper_pos[0], gripper_pos[1], gripper_pos[2]]
       cam_up_vector = [-1, 0, 0]
       self.sensor.setCamMatrix(gripper_pos, cam_up_vector, target_pos)
 
       heightmap, mask_metadata, rgb = self.sensor.getHeightmap(self.heightmap_size)
       get_mask = lambda in_obj_data, in_link_data,  _obj_id, _obj_link_id: (in_obj_data == _obj_id) & (self._mask_or(in_link_data, _obj_link_id))
       masks = {}
-      # masks['gripper'] =  np.transpose(get_mask(mask_metadata[0], mask_metadata[1], 1, [-1]))
       masks['gripper'] =  np.transpose(mask_metadata[0]==1)
       for i, obj in enumerate(self.objects):
         masks['object'+str(i+1)] = np.transpose(get_mask(mask_metadata[0], mask_metadata[1], obj.object_id, [-1]))
     
 
-      # import matplotlib.pyplot as plt
-      # print("object id", np.unique(mask_metadata[0]))
-      # print("link id", np.unique(mask_metadata[1]))
-      # plt.imshow(masks['robot'])
-      # plt.show()
-      # plt.imshow(masks['object1'])
-      # plt.show()
-      # plt.imshow(masks['object2'])
-      # plt.show()
-
-      if self.view_type == 'camera_center_xyz':
-        depth = -heightmap + gripper_pos[2]
-      else:
-        depth = heightmap
+      depth = heightmap
       return depth, masks, rgb
     elif self.view_type in ['pers_center_xyz']:
       # xyz centered, gripper will be visible

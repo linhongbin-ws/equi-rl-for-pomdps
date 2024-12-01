@@ -9,28 +9,15 @@ class Sensor(object):
       cameraTargetPosition=target_pos,
     )
 
-    # self.near = near
-    # self.far = far
-    # self.fov = np.degrees(2 * np.arctan((target_size / 2) / self.far))
-    # self.near = 0.001
-    # self.far = 0.3
-    # self.fov = 70
-    # self.proj_matrix = pb.computeProjectionMatrixFOV(self.fov, 1, self.near, self.far)
-
-  def setCamMatrix(self, cam_pos, cam_up_vector, target_pos):
-    self.view_matrix = pb.computeViewMatrix(
-      cameraEyePosition=[cam_pos[0], cam_pos[1], cam_pos[2]],
-      cameraUpVector=cam_up_vector,
-      cameraTargetPosition=target_pos,
-    )
-    # self.proj_matrix = pb.computeProjectionMatrixFOV(70, 1, 0.001, 0.3)
-    self.proj_matrix = pb.computeProjectionMatrixFOV(self.fov, 1, self.near, self.far)
+  # def setCamMatrix(self, cam_pos, cam_up_vector, target_pos):
+  #   self.view_matrix = pb.computeViewMatrix(
+  #     cameraEyePosition=[cam_pos[0], cam_pos[1], cam_pos[2]],
+  #     cameraUpVector=cam_up_vector,
+  #     cameraTargetPosition=target_pos,
+  #   )
+  #   self.proj_matrix = pb.computeProjectionMatrixFOV(self.fov, 1, self.near, self.far)
 
   def getHeightmap(self, size):
-    # image_arr = pb.getCameraImage(width=size, height=size,
-    #                               viewMatrix=self.view_matrix,
-    #                               projectionMatrix=self.proj_matrix,
-    #                               renderer=pb.ER_TINY_RENDERER)
     image_arr = pb.getCameraImage(width=size, height=size,
                                   viewMatrix=self.view_matrix,
                                   projectionMatrix=self.proj_matrix,
@@ -48,12 +35,13 @@ class Sensor(object):
     mask_metadata = (in_obj_data, in_link_data)
 
     rgb = image_arr[2]
-    # get_mask = lambda in_obj_data, in_link_data,  _obj_id, _obj_link_id: (in_obj_data == _obj_id) & (self._mask_or(in_link_data, _obj_link_id))
-    # mask1 = get_mask(in_obj_data, in_link_data, 1, [-1])
     # import matplotlib.pyplot as plt
-    # plt.imshow(depth_img)
+    # plt.imshow(depth,)
+    # plt.imshow(np.abs(depth - np.max(depth)).reshape(size, size),)
+    # plt.colorbar()
     # plt.show()
-    return np.abs(depth - np.max(depth)).reshape(size, size), mask_metadata, rgb[:,:,:3]
+    # return np.abs(depth - np.max(depth)).reshape(size, size), mask_metadata, rgb[:,:,:3]
+    return depth, mask_metadata, rgb[:,:,:3]
 
   def getPointCloud(self, size, to_numpy=True):
     image_arr = pb.getCameraImage(width=size, height=size,
