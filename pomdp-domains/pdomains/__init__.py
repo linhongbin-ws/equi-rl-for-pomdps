@@ -140,3 +140,19 @@ register(
     entry_point='pdomains.drawer_opening_pix:DrawerEnv',
     max_episode_steps=50,
 )
+
+
+
+
+
+
+register(
+    id='pdomains-block-pulling-dict',
+    entry_point='pdomains.block_pulling_dict:BlockEnv',
+    max_episode_steps=50,
+)
+register(
+    id='pdomains-block-picking-dict',
+    entry_point='pdomains.block_picking_dict:BlockEnv',
+    max_episode_steps=50,
+)

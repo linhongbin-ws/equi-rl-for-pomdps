@@ -52,3 +52,29 @@ register(
     kwargs={"img_size": 90},
     max_episode_steps=50,
 )
+
+
+register(
+    "BlockPulling-Symm-Dict",
+    entry_point="pdomains.block_pulling_dict:BlockEnv",
+    max_episode_steps=50,
+)
+
+
+register(
+    "BlockPicking-Symm-Dict",
+    entry_point="pdomains.block_picking_dict:BlockEnv",
+    max_episode_steps=50,
+)
+
+register(
+    "BlockPushing-Symm-Dict",
+    entry_point="pdomains.block_pushing_dict:BlockEnv",
+    max_episode_steps=50,
+)
+
+register(
+    "DrawerOpening-Symm-Dict",
+    entry_point="pdomains.drawer_opening_dict:DrawerEnv",
+    max_episode_steps=50,
+)

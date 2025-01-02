@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from more_itertools import first
 import numpy as np
 import gym
@@ -17,7 +19,6 @@ class BlockEnv(gym.Env):
                                 [0.01, 0.25]])
 
         self.image_size = img_size
-
         # in RAD envs, image_size is greater than true_image_size
         self.true_image_size = 84
 
@@ -35,7 +36,7 @@ class BlockEnv(gym.Env):
         
         self.env_config['render'] = rendering
         self.seed(seed)
-        self.core_env = env_factory.createSingleProcessEnv('close_loop_pomdp_block_picking',
+        self.core_env = env_factory.createSingleProcessEnv('close_loop_pomdp_block_pushing',
                                                             self.env_config,
                                                             self.planner_config)
 
@@ -64,6 +65,8 @@ class BlockEnv(gym.Env):
 
         self.step_cnt = 0
 
+        self.old_obs = None
+
     def query_expert(self, episode_idx):
         """_summary_
 
@@ -73,19 +76,23 @@ class BlockEnv(gym.Env):
         Returns:
             _type_: expert action
         """
-        if episode_idx % 2 == 0:
-            return self.pick_movable()
+        if episode_idx % 2 == 1:
+            return self.push_movable()
         else:
-            if self.step_cnt <= 10:
-                return self.pick_immovable()
-            elif self.step_cnt <= 15:
-                return self.move_up()
+            if self.step_cnt <= 8:
+                return self.push_immovable()
+            elif self.step_cnt <= 10:
+                self.signal_reset_target()
+                return self.do_nothing()
             else:
-                return self.pick_movable()
+                return self.push_movable()
 
-    def pick_movable(self):
-        """pick the movable block"""
-        action = self.core_env.getNextAction(self.target_obj_idx)
+    def signal_reset_target(self):
+        self.core_env.getNextAction(2)
+
+    def push_movable(self):
+        """pull the movable block"""
+        action = self.core_env.getNextAction(1)
         action[1:4] /= self.xyz_range
 
         if self.action_dim == 5:
@@ -96,9 +103,9 @@ class BlockEnv(gym.Env):
 
         return action
 
-    def pick_immovable(self):
-        """pick the immovable block"""
-        action = self.core_env.getNextAction(1 - self.target_obj_idx)
+    def push_immovable(self):
+        """pull the immovable block"""
+        action = self.core_env.getNextAction(0)
         action[1:4] /= self.xyz_range
 
         if self.action_dim == 5:
@@ -109,14 +116,27 @@ class BlockEnv(gym.Env):
 
         return action
 
-    def move_up(self):
+    # def query_expert(self, target_obj_idx):
+    #     """pick the movable block"""
+    #     action = self.core_env.getNextAction(0)
+    #     action[1:4] /= self.xyz_range
+
+    #     if self.action_dim == 5:
+    #         action[4] /= self.r_range
+
+    #     if self.env_config['robot'] == 'kuka':
+    #         action[0] = 2*action[0] - 1
+
+    #     return action
+
+    def do_nothing(self):
         """pick the immovable block"""
         action = self.core_env.getNextAction(1 - self.target_obj_idx)
         action[1:4] /= self.xyz_range
 
         action[1] = 0.0
         action[2] = 0.0
-        action[3] = 1.0
+        action[3] = 0.0
 
         if self.action_dim == 5:
             action[4] /= self.r_range
@@ -156,23 +176,15 @@ class BlockEnv(gym.Env):
         return (math.sqrt(2) * torch.lerp(torch.lerp(n00, n10, t[..., 0]), torch.lerp(n01, n11, t[..., 0]), t[..., 1]))
 
     def _process_obs(self, state, obs):
-        # plt.imshow(obs[0])
-        # plt.clim(0, 0.3)
-        # plt.colorbar()
-        # plt.savefig('before_noise.png', bbox_inches='tight')
-        # plt.close()
         if self.include_noise:
             obs[0] += 0.007*self.rand_perlin_2d((self.image_size, self.image_size), (
                 (np.random.choice([1, 2, 4, 6], 1)[0]),
                 int(np.random.choice([1, 2, 4, 6], 1)[0]))).numpy()
-        # plt.imshow(obs[0])
-        # plt.clim(0, 0.3)
-        # plt.colorbar()
-        # plt.savefig('after_noise.png', bbox_inches='tight')
-        # plt.close()
-        # breakpoint()
-        state_tile = state*np.ones((1, obs.shape[1], obs.shape[2]))
-        stacked = np.concatenate([obs, state_tile], axis=0)
+
+        depths = [v for k,v in obs.items()]
+        depth = np.min(np.stack(depths, axis=0), axis=0)
+        state_tile = state*np.ones(depth.shape)
+        stacked = np.stack([depth, state_tile], axis=0)
         return stacked
 
     def step(self, action):
@@ -185,7 +197,10 @@ class BlockEnv(gym.Env):
             action[0] = 0.5 * (action[0] + 1)  # [-1, 1] to [0, 1] for p
         (state, _, obs), reward, done = self.core_env.step(action)
 
-        self.obs = self._process_obs(state, obs)
+        self.obs = obs.copy()
+        self.obs['image'] = self._process_obs(state, obs['depth'])
+
+        dense_reward = self.core_env.getEnvPenalty()
 
         info = {}
 
@@ -205,9 +220,19 @@ class BlockEnv(gym.Env):
         self.target_obj_idx = 1 - self.target_obj_idx
         self.step_cnt = 0
         (state, _, obs) = self.core_env.reset(self.target_obj_idx, noise=self.include_noise)
-        self.obs = self._process_obs(state, obs)
+        self.obs = obs.copy()
+        self.obs['image'] = self._process_obs(state, obs['depth'])
+
+        # if self.old_obs is not None:
+        #     diff = obs[0] - self.old_obs
+        #     print(np.min(diff), np.max(diff), np.mean(diff))
+
+        # self.old_obs = obs
 
         return self.obs
 
     def close(self):
         self.core_env.close()
+
+    def get_projection_matrix(self):
+        return self.core_env.get_projection_matrix()

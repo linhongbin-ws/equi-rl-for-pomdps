@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from more_itertools import first
 import numpy as np
 import gym
@@ -12,8 +10,8 @@ import math
 import torch
 
 class BlockEnv(gym.Env):
-    def __init__(self, seed=0, img_size=84, rendering=False, robot='kuka', action_sequence='pxyzr', noise=False, obs_dict=False):
-        self._obs_dict = obs_dict
+    def __init__(self, seed=0, img_size=84, rendering=False, robot='kuka', action_sequence='pxyzr', noise=False):
+
         workspace = np.asarray([[0.3, 0.7],
                                 [-0.2, 0.2],
                                 [0.01, 0.25]])
@@ -164,10 +162,9 @@ class BlockEnv(gym.Env):
             obs[0] += 0.007*self.rand_perlin_2d((self.image_size, self.image_size), (
                 (np.random.choice([1, 2, 4, 6], 1)[0]),
                 int(np.random.choice([1, 2, 4, 6], 1)[0]))).numpy()
-        depths = [v for k,v in obs.items()]
-        depth = np.min(np.stack(depths, axis=0), axis=0)
-        state_tile = state*np.ones(depth.shape)
-        stacked = np.stack([depth, state_tile], axis=0)
+
+        state_tile = state*np.ones((1, obs.shape[1], obs.shape[2]))
+        stacked = np.concatenate([obs, state_tile], axis=0)
         return stacked
 
     def step(self, action):
@@ -180,8 +177,7 @@ class BlockEnv(gym.Env):
             action[0] = 0.5 * (action[0] + 1)  # [-1, 1] to [0, 1] for p
         (state, _, obs), reward, done = self.core_env.step(action)
 
-        self.obs = obs.copy()
-        self.obs['image'] = self._process_obs(state, obs['depth'])
+        self.obs = self._process_obs(state, obs)
 
         info = {}
 
@@ -192,8 +188,8 @@ class BlockEnv(gym.Env):
 
         if self.show:
             self.render()
-        
-        return self.obs if self._obs_dict else self.obs['image'], reward, done, info
+
+        return self.obs, reward, done, info
 
     def render(self, mode='human'):
         pass
@@ -202,18 +198,15 @@ class BlockEnv(gym.Env):
         self.target_obj_idx = 1 - self.target_obj_idx
         self.step_cnt = 0
         (state, _, obs) = self.core_env.reset(self.target_obj_idx, noise=self.include_noise)
-        self.obs = obs.copy()
-        self.obs['image'] = self._process_obs(state, obs['depth'])
+        self.obs = self._process_obs(state, obs)
 
         # if self.old_obs is not None:
         #     diff = obs[0] - self.old_obs
         #     print(np.min(diff), np.max(diff), np.mean(diff))
 
         # self.old_obs = obs
-        return self.obs if self._obs_dict else self.obs['image']
+
+        return self.obs
 
     def close(self):
         self.core_env.close()
-
-    def get_projection_matrix(self):
-        return self.core_env.get_projection_matrix()

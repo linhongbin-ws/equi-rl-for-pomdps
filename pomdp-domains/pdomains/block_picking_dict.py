@@ -171,8 +171,10 @@ class BlockEnv(gym.Env):
         # plt.savefig('after_noise.png', bbox_inches='tight')
         # plt.close()
         # breakpoint()
-        state_tile = state*np.ones((1, obs.shape[1], obs.shape[2]))
-        stacked = np.concatenate([obs, state_tile], axis=0)
+        depths = [v for k,v in obs.items()]
+        depth = np.min(np.stack(depths, axis=0), axis=0)
+        state_tile = state*np.ones(depth.shape)
+        stacked = np.stack([depth, state_tile], axis=0)
         return stacked
 
     def step(self, action):
@@ -185,7 +187,9 @@ class BlockEnv(gym.Env):
             action[0] = 0.5 * (action[0] + 1)  # [-1, 1] to [0, 1] for p
         (state, _, obs), reward, done = self.core_env.step(action)
 
-        self.obs = self._process_obs(state, obs)
+
+        self.obs = obs.copy()
+        self.obs['image'] = self._process_obs(state, obs['depth'])
 
         info = {}
 
@@ -205,9 +209,12 @@ class BlockEnv(gym.Env):
         self.target_obj_idx = 1 - self.target_obj_idx
         self.step_cnt = 0
         (state, _, obs) = self.core_env.reset(self.target_obj_idx, noise=self.include_noise)
-        self.obs = self._process_obs(state, obs)
-
+        self.obs = obs.copy()
+        self.obs['image'] = self._process_obs(state, obs['depth'])
         return self.obs
 
     def close(self):
         self.core_env.close()
+        
+    def get_projection_matrix(self):
+        return self.core_env.get_projection_matrix()
