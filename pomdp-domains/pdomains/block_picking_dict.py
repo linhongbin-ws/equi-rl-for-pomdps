@@ -185,11 +185,12 @@ class BlockEnv(gym.Env):
 
         if self.env_config['robot'] == 'kuka':
             action[0] = 0.5 * (action[0] + 1)  # [-1, 1] to [0, 1] for p
-        (state, _, obs), reward, done = self.core_env.step(action)
+        (state, is_exceed, obs), reward, done = self.core_env.step(action)
 
 
         self.obs = obs.copy()
         self.obs['image'] = self._process_obs(state, obs['depth'])
+        self.obs['is_exceed_ws'] = is_exceed
 
         info = {}
 
@@ -211,6 +212,7 @@ class BlockEnv(gym.Env):
         (state, _, obs) = self.core_env.reset(self.target_obj_idx, noise=self.include_noise)
         self.obs = obs.copy()
         self.obs['image'] = self._process_obs(state, obs['depth'])
+        self.obs['is_exceed_ws'] = False
         return self.obs
 
     def close(self):

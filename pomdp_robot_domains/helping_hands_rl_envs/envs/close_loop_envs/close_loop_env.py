@@ -112,6 +112,14 @@ class CloseLoopEnv(BaseEnv):
     pos = np.array(current_pos) + np.array([x, y, z])
     rot = np.array(current_rot) + np.array(rot)
     rot_q = pb.getQuaternionFromEuler(rot)
+    exceed_ws = False
+    if (pos[0] < self.workspace[0, 0]) or \
+        (pos[0] > self.workspace[0, 1]) or\
+        (pos[1] < self.workspace[1, 0]) or \
+        (pos[1] > self.workspace[1, 1]) or\
+        (pos[2] < self.workspace[2, 0]) or \
+        (pos[2] > self.workspace[2, 1]):
+      exceed_ws = True
     pos[0] = np.clip(pos[0], self.workspace[0, 0], self.workspace[0, 1])
     pos[1] = np.clip(pos[1], self.workspace[1, 0], self.workspace[1, 1])
     pos[2] = np.clip(pos[2], self.workspace[2, 0], self.workspace[2, 1])
@@ -121,6 +129,9 @@ class CloseLoopEnv(BaseEnv):
     self.setRobotHoldingObj()
     self.renderer.clearPoints()
     obs = self._getObservation(action)
+    obs= list(obs)
+    obs[1] = exceed_ws
+    obs = tuple(obs)
     valid = self.isSimValid()
     if valid:
       done = self._checkTermination()
