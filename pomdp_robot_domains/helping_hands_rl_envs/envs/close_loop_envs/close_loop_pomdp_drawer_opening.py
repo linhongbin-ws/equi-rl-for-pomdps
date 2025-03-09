@@ -11,7 +11,7 @@ class CloseLoopPomdpDrawerOpeningEnv(CloseLoopEnv):
     super().__init__(config)
     self.drawer = Drawer()
     self.drawer_rot = 0
-
+    self._task_type = "open_drawer"
     self.locked_drawer = Drawer(locked=True)
 
   def initialize(self):

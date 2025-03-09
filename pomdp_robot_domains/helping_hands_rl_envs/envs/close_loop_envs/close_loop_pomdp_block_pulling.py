@@ -12,6 +12,7 @@ class CloseLoopPomdpBlockPullingEnv(CloseLoopEnv):
     if 'object_scale_range' not in config:
       config['object_scale_range'] = [0.8, 0.8]
     super().__init__(config)
+    self._task_type = "block_pull"
 
   def reset(self, target_obj_idx, noise=False):
     while True:

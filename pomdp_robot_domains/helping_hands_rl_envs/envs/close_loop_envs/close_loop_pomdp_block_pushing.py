@@ -11,6 +11,7 @@ from helping_hands_rl_envs.pybullet.utils.constants import NoValidPositionExcept
 class CloseLoopPomdpBlockPushingEnv(CloseLoopEnv):
   def __init__(self, config):
     super().__init__(config)
+    self._task_type = "block_push"
     self.goal_pos = self.workspace.mean(1)[:2]
     self.goal_id = None
     # self.goal_grid_size_half = 10
@@ -18,12 +19,13 @@ class CloseLoopPomdpBlockPushingEnv(CloseLoopEnv):
     self.goal_size = 0.09
     self.goal_grid_size_half = round(self.goal_size / self.heightmap_resolution / 2)
     self.target_obj_idx = 0
+    self._scaling = 0.5
 
   def getGoalPixel(self, gripper_pos=None):
     if gripper_pos is None:
       gripper_pos = self.robot._getEndEffectorPosition()
-    goal_pixel_x = (self.goal_pos[0] - gripper_pos[0]) / self.heightmap_resolution + self.heightmap_size // 2
-    goal_pixel_y = (self.goal_pos[1] - gripper_pos[1]) / self.heightmap_resolution + self.heightmap_size // 2
+    goal_pixel_x = (self.goal_pos[0] - gripper_pos[0]) / self.heightmap_resolution  * self._scaling  + self.heightmap_size // 2
+    goal_pixel_y = (self.goal_pos[1] - gripper_pos[1]) / self.heightmap_resolution * self._scaling  + self.heightmap_size // 2
     return round(goal_pixel_x), round(goal_pixel_y)
 
   def reset(self, target_obj_idx, noise=False):
@@ -77,18 +79,21 @@ class CloseLoopPomdpBlockPushingEnv(CloseLoopEnv):
     return self._getObservation()
 
   def _getHeightmap(self, gripper_pos=None, gripper_rz=None):
-    heightmap = super()._getHeightmap(gripper_pos, gripper_rz)
+    heightmap, masks, rgb = super()._getHeightmap(gripper_pos, gripper_rz)
     goal_x, goal_y = self.getGoalPixel(gripper_pos)
     # heightmap[max(goal_x-self.goal_grid_size, 0):min(goal_x+self.goal_grid_size, self.heightmap_size-1), max(goal_y-self.goal_grid_size, 0):min(goal_y+self.goal_grid_size, self.heightmap_size-1)] += 0.025
-    test_x = np.arange(goal_x - self.goal_grid_size_half, goal_x + self.goal_grid_size_half, 1)
+    test_x = np.arange(goal_x - self.goal_grid_size_half* self._scaling , goal_x + self.goal_grid_size_half * self._scaling , 1)
     test_x = test_x[(0 <= test_x) & (test_x < 84)]
-    test_y = np.arange(goal_y - self.goal_grid_size_half, goal_y + self.goal_grid_size_half, 1)
+    test_y = np.arange(goal_y - self.goal_grid_size_half* self._scaling , goal_y + self.goal_grid_size_half * self._scaling , 1)
     test_y = test_y[(0 <= test_y) & (test_y < 84)]
     # heightmap[test_x, test_y] += 0.025
     X2D, Y2D = np.meshgrid(test_x, test_y)
     out = np.column_stack((X2D.ravel(), Y2D.ravel())).astype(int)
-    heightmap[out[:, 0].reshape(-1), out[:, 1].reshape(-1)] += 0.02
-    return heightmap
+    heightmap[out[:, 1].reshape(-1), out[:, 0].reshape(-1)] = 0.9
+    goal_mask = np.zeros(heightmap.shape, dtype=bool)
+    goal_mask[out[:, 1].reshape(-1), out[:, 0].reshape(-1)] = 1
+    masks['object3'] = goal_mask
+    return heightmap, masks, rgb
 
   def _checkTermination(self):
     # print("z:", self.objects[1].getPosition()[2])

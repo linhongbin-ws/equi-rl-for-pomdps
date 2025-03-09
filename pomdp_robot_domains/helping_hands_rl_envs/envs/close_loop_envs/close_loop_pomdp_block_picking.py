@@ -10,6 +10,7 @@ from helping_hands_rl_envs.pybullet.equipments.tray import Tray
 class CloseLoopPomdpBlockPickingEnv(CloseLoopEnv):
   def __init__(self, config):
     super().__init__(config)
+    self._task_type = "block_pick"
 
   def reset(self, target_obj_idx, noise=False):
     self.target_obj_idx = target_obj_idx

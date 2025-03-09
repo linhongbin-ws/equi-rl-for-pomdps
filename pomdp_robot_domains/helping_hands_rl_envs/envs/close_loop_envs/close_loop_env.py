@@ -359,7 +359,12 @@ class CloseLoopEnv(BaseEnv):
     elif self.view_type in ['camera_center_xyz', 'camera_center_xyz_height']:
       # xyz centered, gripper will be visible
       # print("xxxxxx gripper_z_offset", gripper_z_offset)
-      gripper_pos[2] += 0.04
+      if self._task_type == "open_drawer":
+        gripper_pos[2] += 0.04
+      if self._task_type == "block_push":
+        gripper_pos[2] += 0.05
+      else:
+        gripper_pos[2] += 0.04
       target_pos = [gripper_pos[0], gripper_pos[1], gripper_pos[2]]
       cam_up_vector = [-1, 0, 0]
       self.sensor.setCamMatrix(gripper_pos, cam_up_vector, target_pos)
@@ -368,8 +373,21 @@ class CloseLoopEnv(BaseEnv):
       get_mask = lambda in_obj_data, in_link_data,  _obj_id, _obj_link_id: (in_obj_data == _obj_id) & (self._mask_or(in_link_data, _obj_link_id))
       masks = {}
       masks['gripper'] =  np.transpose(mask_metadata[0]==1)
-      for i, obj in enumerate(self.objects):
-        masks['object'+str(i+1)] = np.transpose(get_mask(mask_metadata[0], mask_metadata[1], obj.object_id, [-1]))
+      if len(self.objects) > 0:
+        _obj_ids = [o.object_id for o in self.objects]
+        for i, o_id in enumerate(_obj_ids):
+          masks['object'+str(i+1)] = np.transpose(get_mask(mask_metadata[0], mask_metadata[1], o_id, [-1]))
+      else:
+        _obj_ids = [self.drawer.id,self.locked_drawer.id]
+        for i, o_id in enumerate(_obj_ids):
+          # links_ids = [2,3,4,6,7]
+          # links_ids = [11]
+          links_ids = np.arange(12).tolist()
+          # print("xxxxxxxxxx")
+          # print(links_ids)
+          masks['object'+str(i+1)] = np.transpose(get_mask(mask_metadata[0], mask_metadata[1], o_id,links_ids))      #2,3,4 6 7
+
+
     
 
       depth = heightmap
