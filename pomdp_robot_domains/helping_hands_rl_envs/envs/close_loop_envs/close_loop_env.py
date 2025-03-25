@@ -280,6 +280,7 @@ class CloseLoopEnv(BaseEnv):
     im = np.zeros((self.heightmap_size, self.heightmap_size))
     gripper_half_size = 5 * self.workspace_size / self.obs_size_m
     gripper_half_size = round(gripper_half_size/128*self.heightmap_size)
+    
     if self.robot_type in ['panda', 'ur5', 'ur5_robotiq']:
       gripper_max_open = 42 * self.workspace_size / self.obs_size_m
     elif self.robot_type == 'kuka':
@@ -287,6 +288,10 @@ class CloseLoopEnv(BaseEnv):
     else:
       raise NotImplementedError
     d = int(gripper_max_open/128*self.heightmap_size * gripper_state)
+
+    gripper_half_size = 10 # hard code here, modification
+    d = int(d * 0.5) # hard code here, modification
+
 
     if self.view_type in ['camera_center_z_height', 'camera_center_z']:
     
@@ -378,15 +383,16 @@ class CloseLoopEnv(BaseEnv):
         for i, o_id in enumerate(_obj_ids):
           masks['object'+str(i+1)] = np.transpose(get_mask(mask_metadata[0], mask_metadata[1], o_id, [-1]))
       else:
-        _obj_ids = [self.drawer.id,self.locked_drawer.id]
+        _obj_ids = [self.drawer,self.locked_drawer,]
         for i, o_id in enumerate(_obj_ids):
           # links_ids = [2,3,4,6,7]
           # links_ids = [11]
           links_ids = np.arange(12).tolist()
           # print("xxxxxxxxxx")
           # print(links_ids)
-          masks['object'+str(i+1)] = np.transpose(get_mask(mask_metadata[0], mask_metadata[1], o_id,links_ids))      #2,3,4 6 7
-
+          masks['object'+str(i+1)] = np.transpose(get_mask(mask_metadata[0], mask_metadata[1], o_id.id,links_ids))      #2,3,4 6 7
+          handle = np.transpose(get_mask(mask_metadata[0], mask_metadata[1], o_id.handle.id, [-1,0,1]))
+          masks['object'+str(i+1)] = np.logical_or(masks['object'+str(i+1)], handle)
 
     
 
