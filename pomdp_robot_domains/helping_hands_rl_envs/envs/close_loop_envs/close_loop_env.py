@@ -289,7 +289,7 @@ class CloseLoopEnv(BaseEnv):
       raise NotImplementedError
     d = int(gripper_max_open/128*self.heightmap_size * gripper_state)
 
-    gripper_half_size = 10 # hard code here, modification
+    gripper_half_size = 15 # hard code here, modification
     d = int(d * 0.5) # hard code here, modification
 
 
